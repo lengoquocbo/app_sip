@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "../.."
+		},
+		{
+			"path": "../../../../voip24h_sdk_mobile"
+		}
+	],
+	"settings": {}
+}

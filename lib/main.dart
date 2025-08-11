@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'screens/login_screen.dart';
 import 'screens/dial_screen.dart';
 import 'screens/history_screen.dart';
 
@@ -11,10 +12,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'SIP App',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: BottomNavPage(), // Đây là trang chính có thanh điều hướng
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: LoginScreen(), // mở đầu bằng màn hình nhập số điện thoại
     );
   }
 }
@@ -43,14 +42,8 @@ class _BottomNavPageState extends State<BottomNavPage> {
           });
         },
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dialpad),
-            label: 'Gọi điện',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'Lịch sử',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.dialpad), label: 'Gọi điện'),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Lịch sử'),
         ],
       ),
     );

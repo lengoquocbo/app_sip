@@ -1,4 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:voip24h_sdk_mobile/voip24h_sdk_mobile.dart';
+import 'package:voip24h_sdk_mobile/models/SipConfiguration.dart';
+import 'package:voip24h_sdk_mobile/utils/TransportType.dart';
+import 'incoming_call_screen.dart';
 
 class DialScreen extends StatefulWidget {
   @override
@@ -7,7 +12,45 @@ class DialScreen extends StatefulWidget {
 
 class _DialScreenState extends State<DialScreen> {
   String dialedNumber = '';
-  final double buttonSize = 50; // Thay đổi giá trị này để chỉnh kích thước nút
+  final double buttonSize = 50;
+  StreamSubscription? _callEventSub;
+  bool _isIncomingScreenShown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final sipConfig = SipConfiguration(
+      '1111',
+      '192.168.1.11',
+      'abcd@111',
+      5160,
+      TransportType.Udp,
+      true,
+    );
+    Voip24hSDK.callModule.initSipModule(sipConfig);
+
+    // Lắng nghe sự kiện cuộc gọi đến và kết thúc
+    _callEventSub = Voip24hSDK.callModule.eventStreamController.stream.listen((event) {
+      print('EVENT FLUTTER: $event');
+      if (event['event'].toString() == 'CallEvent.Ring' && !_isIncomingScreenShown) {
+        final caller = event['body']?['phoneNumber'] ?? 'Không rõ';
+        _showIncomingCallScreen(caller);
+      }
+      if (event['event'].toString() == 'CallEvent.Hangup' ||
+          event['event'].toString() == 'CallEvent.Missed') {
+        if (_isIncomingScreenShown && Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+          _isIncomingScreenShown = false;
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _callEventSub?.cancel();
+    super.dispose();
+  }
 
   void _addDigit(String digit) {
     setState(() {
@@ -49,9 +92,32 @@ class _DialScreenState extends State<DialScreen> {
   }
 
   void _startCall() {
+    Voip24hSDK.callModule.call(dialedNumber);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Đang gọi $dialedNumber...')),
+      SnackBar(content: Text('Đang gọi $dialedNumber qua SIP...')),
     );
+  }
+
+  void _showIncomingCallScreen(String caller) {
+    _isIncomingScreenShown = true;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => IncomingCallScreen(
+          caller: caller,
+          onAccept: () {
+            Voip24hSDK.callModule.answer();
+            // Không pop ở đây, sẽ pop khi nhận CallEvent.Hangup
+          },
+          onReject: () {
+            Voip24hSDK.callModule.reject();
+            // Không pop ở đây, sẽ pop khi nhận CallEvent.Hangup
+          },
+        ),
+      ),
+    ).then((_) {
+      _isIncomingScreenShown = false;
+    });
   }
 
   Widget _buildButton(String digit, {String? letters}) {
@@ -211,6 +277,6 @@ class _DialScreenState extends State<DialScreen> {
           const SizedBox(height: 32),
         ],
       ),
-    );
+     );
   }
-}
+}  
